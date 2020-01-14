@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "830857090313",
+    "firebase_url": "https://nec-app-33c56.firebaseio.com",
+    "project_id": "nec-app-33c56",
+    "storage_bucket": "nec-app-33c56.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:830857090313:android:3dcb864eb8b3bcc3856fd8",
+        "android_client_info": {
+          "package_name": "nec.mashcom.co.zw.nec_inspection_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "830857090313-adpsb3tav0g542iaao82dv770fkolcqt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrXkULu6bIAx7DE1YNzgQuzioGCrUFdxQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "830857090313-adpsb3tav0g542iaao82dv770fkolcqt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
