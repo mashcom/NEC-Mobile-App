@@ -19,6 +19,8 @@ environment:
 dependencies:
   flutter_form_builder: ^3.7.2
   cloud_firestore:
+  sqflite: ^1.2.0
+  path:
   flutter:
     sdk: flutter
 
@@ -68,12 +70,8 @@ flutter:
           weight: 600
         - asset: assets/fonts/WorkSans-Bold.ttf
           weight: 700
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Bold.ttf
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Medium.ttf
-          weight: 400
+
+
 
   #
   # For details regarding fonts from package dependencies,

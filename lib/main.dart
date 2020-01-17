@@ -1,9 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import 'package:nec_inspection_app/table_form_check_collection.dart';
-import 'app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'app_theme.dart';
+import 'inspection.dart';
+import 'captured_forms.dart';
+import 'dart:convert';
+
 
 void main() => runApp(MyApp());
 
@@ -14,34 +21,49 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'NEC Inspection App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
           primarySwatch: Colors.indigo,
           textTheme: AppTheme.textTheme,
-          platform: TargetPlatform.iOS),
-      home: MyHomePage(title: 'NEC Inspection App'),
+          platform: TargetPlatform.iOS
+      ),
+      // home: MyHomePage(title: 'NEC Inspection App'),
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: TabBar(
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.camera),
+                  text: "Capture",
+                ),
+                Tab(
+                  icon: Icon(Icons.book),
+                  text: "Saved Inspections",
+                ),
+                Tab(
+                  icon: Icon(Icons.sync),
+                  text: "Sync Data",
+                ),
+              ],
+            ),
+            title: Text('NEC Inspection App'),
+            elevation: 10,
+          ),
+          body: TabBarView(
+            children: [
+              MyHomePage(title: 'Capture Inspection'),
+              CapturedFormsPage(title: "Captured Forms",),
+              Icon(Icons.directions_bike),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -53,12 +75,24 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   final DocumentReference postRef = Firestore.instance.document('inspections');
 
+  Future _showAlert(BuildContext context, String message) async {
+    return showDialog(
+        context: context,
+        child: new AlertDialog(
+          title: new Text(message),
+          actions: <Widget>[
+            new FlatButton(
+                onPressed: () => Navigator.pop(context), child: new Text('Ok'))
+          ],
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      /*appBar: AppBar(
         title: Text(widget.title),
-      ),
+      ),*/
       body: Padding(
         padding: EdgeInsets.all(25),
         child: ListView(
@@ -80,21 +114,25 @@ class _MyHomePageState extends State<MyHomePage> {
                 FormBuilder(
                   key: _fbKey,
                   initialValue: {
-                    'date': DateTime.now(),
-                    'accept_terms': false,
+                    'date_collected': DateTime.now(),
                   },
                   autovalidate: true,
                   child: Column(
                     children: <Widget>[
                       FormBuilderTextField(
-                        attribute: "name_and_address",
-                        decoration: InputDecoration(
-                            labelText:
-                            "Name and address of employer(physical)"),
+                        attribute: "name",
+                        decoration: InputDecoration(labelText: "Employer Name"),
                         autofocus: true,
                         validators: [
                           FormBuilderValidators.required(),
-                          FormBuilderValidators.minLength(10),
+                        ],
+                      ),
+                      FormBuilderTextField(
+                        attribute: "address",
+                        decoration: InputDecoration(
+                            labelText: "Address of employer(physical)"),
+                        validators: [
+                          FormBuilderValidators.required(),
                         ],
                       ),
                       FormBuilderTextField(
@@ -115,8 +153,10 @@ class _MyHomePageState extends State<MyHomePage> {
                               errorText: "Invalid email format"),
                         ],
                       ),
-                      FormBuilderTextField(
+                      FormBuilderDateTimePicker(
                         attribute: "inspection_date",
+                        inputType: InputType.date,
+                        format: DateFormat("yyyy-MM-dd"),
                         decoration:
                         InputDecoration(labelText: "Inspection Date"),
                         validators: [
@@ -156,40 +196,16 @@ class _MyHomePageState extends State<MyHomePage> {
                           FormBuilderValidators.required(),
                         ],
                       ),
-                      SizedBox(
-                        height: 20,
-                        child: Text(
-                          "Employee Profiles",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
                       Divider(),
                       SizedBox(
-                        height: 20,
+                        height: 30,
                         child: Text(
-                          "Labour Relations (General) (Amendment) Regulations,2003 (No.1)",
+                          "1. Employee Profiles",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                           ),
                         ),
-                      ),
-                      Divider(),
-                      SizedBox(
-                        height: 20,
-                        child: Text(
-                          "2.1. General Conditions of Employment",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 20,
                       ),
                       Container(
                         margin: EdgeInsets.all(10),
@@ -197,65 +213,44 @@ class _MyHomePageState extends State<MyHomePage> {
                           color: Color.fromRGBO(255, 255, 255, 1),
                         ),
                         child: Table(
-                          border: TableBorder.all(color: Color.fromRGBO(
-                              0, 0, 0, 0.2)),
+                          border: TableBorder.all(
+                              color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
                           TableCellVerticalAlignment.middle,
                           columnWidths: {
-                            0: FractionColumnWidth(.4),
+                            0: FractionColumnWidth(.6),
                             1: FractionColumnWidth(.2),
-                            2: FractionColumnWidth(.4)
+                            2: FractionColumnWidth(.2)
                           },
                           children: [
-                            tableHeaderCollection("Conditions of Employment",
-                                "Tick if in compliance",
-                                "Comments by designated agent/inspector and action taken to rectify"),
-                            tableFormCheckCollection("(i) Grading and wages",
-                                "grading_wages"),
-                            tableFormCheckCollection("(ii) Hours of Work",
-                                "hours_of_work"),
-                            tableFormCheckCollection("(iii) Short Time Work",
-                                "short_time_work"),
-                            tableFormCheckCollection(
-                                "(iv) Special /Annual/Casual leave",
-                                "special_leave"),
-                            tableFormCheckCollection("(v) Sick leave",
-                                "sick_leave"),
-                            tableFormCheckCollection("(vi) Maternity leave",
-                                "maternity_leave"),
-                            tableFormCheckCollection("(viii) Overtime",
-                                "overtime"),
-                            tableFormCheckCollection("(ix )Deductions",
-                                "deductions"),
-                            tableFormCheckCollection(
-                                "(x) Incentive productions bonus scheme",
-                                "incentive_productions_bonus_scheme"),
-                            tableFormCheckCollection("(xi) Industrial holidays",
-                                "industrial_holidays"),
-                            tableFormCheckCollection("(xii) Gratuities",
-                                "gratuities"),
-                            tableFormCheckCollection("(xiii) Pension Scheme",
-                                "pension_scheme"),
-                            tableFormCheckCollection("(xiv) Accommodation",
-                                "accommodation"),
-
+                            tableHeaderCollection(
+                                "Nature of Contract", "Male", "Female"),
+                            tableFormSectionOneCollection(
+                                "(i) Permanent", "permanent"),
+                            tableFormSectionOneCollection(
+                                "(ii) Fixed Term Contract (a)Seasonal",
+                                "contract_seasonal"),
+                            tableFormSectionOneCollection(
+                                "(ii) Fixed Term Contract (b)Casual",
+                                "contract_casual"),
+                            tableFormSectionOneCollection(
+                                "(iii) Employees under 15 years", "under_15"),
                           ],
                         ),
                       ),
                       Divider(),
                       SizedBox(
-                        height: 20,
+                        height: 30,
                         child: Text(
-                          "2.2 General Conditions of Employment: Occupational Health and Safety",
+                          "2. Labour Relations (General) (Amendment) Regulations,2003 (No.1)",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 20,
                           ),
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
+                      formHeadingSection(
+                          "2.1. General Conditions of Employment"),
                       Container(
                         margin: EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -272,7 +267,61 @@ class _MyHomePageState extends State<MyHomePage> {
                             2: FractionColumnWidth(.4)
                           },
                           children: [
-                            tableHeaderCollection("Conditions of Employment",
+                            tableHeaderCollection(
+                                "Conditions of Employment",
+                                "Tick if in compliance",
+                                "Comments by designated agent/inspector and action taken to rectify"),
+                            tableFormCheckCollection(
+                                "(i) Grading and wages", "grading_wages"),
+                            tableFormCheckCollection(
+                                "(ii) Hours of Work", "hours_of_work"),
+                            tableFormCheckCollection(
+                                "(iii) Short Time Work", "short_time_work"),
+                            tableFormCheckCollection(
+                                "(iv) Special /Annual/Casual leave",
+                                "special_leave"),
+                            tableFormCheckCollection(
+                                "(v) Sick leave", "sick_leave"),
+                            tableFormCheckCollection(
+                                "(vi) Maternity leave", "maternity_leave"),
+                            tableFormCheckCollection(
+                                "(viii) Overtime", "overtime"),
+                            tableFormCheckCollection(
+                                "(ix )Deductions", "deductions"),
+                            tableFormCheckCollection(
+                                "(x) Incentive productions bonus scheme",
+                                "incentive_productions_bonus_scheme"),
+                            tableFormCheckCollection("(xi) Industrial holidays",
+                                "industrial_holidays"),
+                            tableFormCheckCollection(
+                                "(xii) Gratuities", "gratuities"),
+                            tableFormCheckCollection(
+                                "(xiii) Pension Scheme", "pension_scheme"),
+                            tableFormCheckCollection(
+                                "(xiv) Accommodation", "accommodation"),
+                          ],
+                        ),
+                      ),
+                      formHeadingSection(
+                          "2.2 General Conditions of Employment: Occupational Health and Safety"),
+                      Container(
+                        margin: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(255, 255, 255, 1),
+                        ),
+                        child: Table(
+                          border: TableBorder.all(
+                              color: Color.fromRGBO(0, 0, 0, 0.2)),
+                          defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
+                          columnWidths: {
+                            0: FractionColumnWidth(.4),
+                            1: FractionColumnWidth(.2),
+                            2: FractionColumnWidth(.4)
+                          },
+                          children: [
+                            tableHeaderCollection(
+                                "Conditions of Employment",
                                 "Provided for/not provided for",
                                 "Comments by designated agent/inspector and action taken"),
                             tableFormCheckCollection("(i)Protective Clothing",
@@ -283,24 +332,11 @@ class _MyHomePageState extends State<MyHomePage> {
                             tableFormCheckCollection(
                                 "(iii) Health and Safety committee",
                                 "health_and_safetycommittee"),
-
                           ],
                         ),
                       ),
-                      Divider(),
-                      SizedBox(
-                        height: 20,
-                        child: Text(
-                          "2.3 General Conditions of Employment: HIV and AIDS",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
+                      formHeadingSection(
+                          "2.3 General Conditions of Employment: HIV and AIDS"),
                       Container(
                         margin: EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -317,7 +353,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             2: FractionColumnWidth(.4)
                           },
                           children: [
-                            tableHeaderCollection("Conditions of Employment",
+                            tableHeaderCollection(
+                                "Conditions of Employment",
                                 "Provided for/not provided for",
                                 "Comments by designated agent/inspector and action taken"),
                             tableFormCheckCollection(
@@ -338,31 +375,133 @@ class _MyHomePageState extends State<MyHomePage> {
                             tableFormCheckCollection(
                                 "(vi) Any peer educators and councillors",
                                 "any_peer_educators_and_councillors"),
-                            tableFormCheckCollection("(vii) Medical testing",
-                                "medical_testing"),
-                            tableFormCheckCollection("(viii)Care and Support",
-                                "care_and_support"),
+                            tableFormCheckCollection(
+                                "(vii) Medical testing", "medical_testing"),
+                            tableFormCheckCollection(
+                                "(viii)Care and Support", "care_and_support"),
                           ],
                         ),
                       ),
+                      formHeadingSection(
+                          "3. Operational Institutions/Instruments under the Labour Act"),
+                      Container(
+                        margin: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(255, 255, 255, 1),
+                        ),
+                        child: Table(
+                          border: TableBorder.all(
+                              color: Color.fromRGBO(0, 0, 0, 0.2)),
+                          defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
+                          columnWidths: {
+                            0: FractionColumnWidth(.4),
+                            1: FractionColumnWidth(.2),
+                            2: FractionColumnWidth(.4)
+                          },
+                          children: [
+                            tableHeaderCollection(
+                                "Institution/Instrument",
+                                "Tick if Existent",
+                                "Comments by designated agent/inspector and action taken"),
+                            tableFormCheckCollection(
+                                "(i)Workers committee", "workers_committee"),
+                            tableFormCheckCollection(
+                                "(ii)Works council", "works_council"),
+                            tableFormCheckCollection(
+                                "(iii)Trade Unions (a)Registered (b)Unregistered:",
+                                "trade_unions"),
+                            tableFormCheckCollection(
+                                "(iv)Employers organisations (a)Registered (b)Unregistered",
+                                "employers_organisations"),
+                            tableFormCheckCollection(
+                                "(v)Employment Council", "employment_council"),
+                            tableFormCheckCollection(
+                                "(vi)Employment Code of Conduct: (a)Works Council (b)NEC",
+                                "employment_code_of_conduct"),
+                          ],
+                        ),
+                      ),
+                      formHeadingSection(
+                          "4. Evidence of any offence/contravention"),
+                      FormBuilderTextField(
+                        attribute: "evidence_of_offence",
+                        decoration: InputDecoration(
+                            labelText:
+                            "Books or documents/records seized as evidence of offence:"),
+                      ),
+                      FormBuilderTextField(
+                        attribute: "general_observations",
+                        decoration: InputDecoration(
+                            labelText: " General observations:"),
+                      ),
+                      SizedBox(
+                        height: 50,
+                      ),
+                      /*formHeadingSection("Signed"),
                       FormBuilderSignaturePad(
-                        decoration: InputDecoration(labelText: "Signature"),
-                        attribute: "signature",
+                        decoration: InputDecoration(
+                            labelText: "Designated Agent/Inspector Signature"),
+                        attribute: "agent_signature",
                         height: 100,
                       ),
+                      FormBuilderSignaturePad(
+                        decoration: InputDecoration(
+                            labelText: "Employers /Representative Signature"),
+                        attribute: "employer_signature",
+                        height: 100,
+                      ),*/
                     ],
                   ),
-                  /*9+-
-
-                   */
+                ),
+                SizedBox(
+                  height: 20,
                 ),
                 Row(
                   children: <Widget>[
                     RaisedButton(
-                      child: Text("Submit"),
+                      child: Text(
+                        "Submit",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      color: Colors.indigo,
                       onPressed: () {
                         if (_fbKey.currentState.saveAndValidate()) {
-                          print(_fbKey.currentState.value);
+                          InspectionProvider insp = InspectionProvider();
+                          insp.open();
+                          Inspection inspection_data = Inspection();
+                          print(_fbKey.currentState.value["name"]);
+                          inspection_data.content =
+                              _fbKey.currentState.value.toString();
+                          inspection_data.id = null;
+                          inspection_data.done = false;
+                          //print(inspection_data.content);
+                          var company_name = _fbKey.currentState.value["name"];
+
+                          var form_data = _fbKey.currentState.value;
+                          var form_json_data = "{";
+                          form_data.forEach((k, v) => {
+                          form_json_data +='"$k":"$v",'
+                          });
+                          form_json_data += "}";
+                          print("JSON");
+                          print(form_json_data);
+                          print("END JSON");
+//return;
+                          insp.simpleInsert(form_json_data,
+                              company_name);
+                          _showAlert(
+                              context, "Form has been successfully saved");
+                          //_fbKey.currentState.reset();
+                          print(insp.getAllInspection());
+                          /* Firestore.instance
+                              .collection('inspections')
+                              .add(_fbKey.currentState.value)
+                              .then((DocumentReference ds) {
+
+                          }).catchError((Object error) {
+                            print(error);
+                          });*/
                         }
                       },
                     ),
