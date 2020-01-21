@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:nec_inspection_app/login.dart';
 import 'package:nec_inspection_app/table_form_check_collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -9,8 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_theme.dart';
 import 'inspection.dart';
 import 'captured_forms.dart';
-import 'dart:convert';
-
 
 void main() => runApp(MyApp());
 
@@ -23,8 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           primarySwatch: Colors.indigo,
           textTheme: AppTheme.textTheme,
-          platform: TargetPlatform.iOS
-      ),
+          platform: TargetPlatform.iOS),
       // home: MyHomePage(title: 'NEC Inspection App'),
       home: DefaultTabController(
         length: 3,
@@ -41,8 +37,8 @@ class MyApp extends StatelessWidget {
                   text: "Saved Inspections",
                 ),
                 Tab(
-                  icon: Icon(Icons.sync),
-                  text: "Sync Data",
+                  icon: Icon(Icons.settings_applications),
+                  text: "Settings",
                 ),
               ],
             ),
@@ -52,8 +48,31 @@ class MyApp extends StatelessWidget {
           body: TabBarView(
             children: [
               MyHomePage(title: 'Capture Inspection'),
-              CapturedFormsPage(title: "Captured Forms",),
-              Icon(Icons.directions_bike),
+              CapturedFormsPage(
+                title: "Captured Forms",
+              ),
+              ListView(
+                children: <Widget>[
+                  ListTile(
+                    title: Text("Auto Validate Input"),
+                    subtitle: Text("Validate input while user is typing input"),
+                    trailing: Form(
+                      child: Checkbox(
+                        value: false,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text("Auto Validate Input"),
+                    subtitle: Text("Validate input while user is typing input"),
+                    trailing: Form(
+                      child: Checkbox(
+                        value: false,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -75,6 +94,13 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   final DocumentReference postRef = Firestore.instance.document('inspections');
 
+  initState() {
+    super.initState();
+    print("Initing");
+    InspectionProvider insp = InspectionProvider();
+    insp.open();
+  }
+
   Future _showAlert(BuildContext context, String message) async {
     return showDialog(
         context: context,
@@ -90,9 +116,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
+      appBar: AppBar(
         title: Text(widget.title),
-      ),*/
+      ),
       body: Padding(
         padding: EdgeInsets.all(25),
         child: ListView(
@@ -138,7 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       FormBuilderTextField(
                         attribute: "telephone",
                         decoration:
-                        InputDecoration(labelText: "Telephone Number"),
+                            InputDecoration(labelText: "Telephone Number"),
                         validators: [
                           FormBuilderValidators.required(),
                           FormBuilderValidators.numeric(),
@@ -158,7 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         inputType: InputType.date,
                         format: DateFormat("yyyy-MM-dd"),
                         decoration:
-                        InputDecoration(labelText: "Inspection Date"),
+                            InputDecoration(labelText: "Inspection Date"),
                         validators: [
                           FormBuilderValidators.required(),
                         ],
@@ -175,7 +201,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         attribute: "cbs_si_no",
                         decoration: InputDecoration(
                             labelText:
-                            "Collective Bargaining Agreement: S.I. No"),
+                                "Collective Bargaining Agreement: S.I. No"),
                         validators: [
                           FormBuilderValidators.required(),
                         ],
@@ -216,7 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           border: TableBorder.all(
                               color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                              TableCellVerticalAlignment.middle,
                           columnWidths: {
                             0: FractionColumnWidth(.6),
                             1: FractionColumnWidth(.2),
@@ -260,7 +286,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           border: TableBorder.all(
                               color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                              TableCellVerticalAlignment.middle,
                           columnWidths: {
                             0: FractionColumnWidth(.4),
                             1: FractionColumnWidth(.2),
@@ -313,7 +339,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           border: TableBorder.all(
                               color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                              TableCellVerticalAlignment.middle,
                           columnWidths: {
                             0: FractionColumnWidth(.4),
                             1: FractionColumnWidth(.2),
@@ -346,7 +372,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           border: TableBorder.all(
                               color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                              TableCellVerticalAlignment.middle,
                           columnWidths: {
                             0: FractionColumnWidth(.4),
                             1: FractionColumnWidth(.2),
@@ -393,7 +419,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           border: TableBorder.all(
                               color: Color.fromRGBO(0, 0, 0, 0.2)),
                           defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                              TableCellVerticalAlignment.middle,
                           columnWidths: {
                             0: FractionColumnWidth(.4),
                             1: FractionColumnWidth(.2),
@@ -428,7 +454,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         attribute: "evidence_of_offence",
                         decoration: InputDecoration(
                             labelText:
-                            "Books or documents/records seized as evidence of offence:"),
+                                "Books or documents/records seized as evidence of offence:"),
                       ),
                       FormBuilderTextField(
                         attribute: "general_observations",
@@ -465,33 +491,38 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(color: Colors.white),
                       ),
                       color: Colors.indigo,
-                      onPressed: () {
+                      onPressed: () async {
                         if (_fbKey.currentState.saveAndValidate()) {
                           InspectionProvider insp = InspectionProvider();
                           insp.open();
-                          Inspection inspection_data = Inspection();
+                          Inspection inspectionData = Inspection();
                           print(_fbKey.currentState.value["name"]);
-                          inspection_data.content =
+                          inspectionData.content =
                               _fbKey.currentState.value.toString();
-                          inspection_data.id = null;
-                          inspection_data.done = false;
+                          inspectionData.id = null;
+                          inspectionData.done = false;
                           //print(inspection_data.content);
-                          var company_name = _fbKey.currentState.value["name"];
+                          var companyName = _fbKey.currentState.value["name"];
+                          var date =
+                              _fbKey.currentState.value["inspection_date"];
 
-                          var form_data = _fbKey.currentState.value;
-                          var form_json_data = "{";
-                          form_data.forEach((k, v) => {
-                          form_json_data +='"$k":"$v",'
-                          });
-                          form_json_data += "}";
+                          var formData = _fbKey.currentState.value;
+                          print(formData);
+                          var formJsonData = "{";
+
+                          formData.forEach(
+                              (k, v) => {formJsonData += '"$k":"$v",'});
+                          formJsonData += '"false":"false"}';
+
                           print("JSON");
-                          print(form_json_data);
+                          print(formJsonData);
                           print("END JSON");
-//return;
-                          insp.simpleInsert(form_json_data,
-                              company_name);
+
+                          insp.simpleInsert(
+                              formJsonData, companyName, date.toString());
                           _showAlert(
                               context, "Form has been successfully saved");
+
                           //_fbKey.currentState.reset();
                           print(insp.getAllInspection());
                           /* Firestore.instance
@@ -522,7 +553,12 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => {},
+        onPressed: () {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (BuildContext context) => LoginPage()));
+        },
         tooltip: 'Capture New Form',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.

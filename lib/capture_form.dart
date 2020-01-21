@@ -4,8 +4,6 @@ import 'package:nec_inspection_app/table_form_check_collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'app_theme.dart';
-import 'inspection.dart';
 
 captureForm(context, _fbKey) {
   Future _showAlert(BuildContext context, String message) async {
@@ -404,7 +402,6 @@ captureForm(context, _fbKey) {
                       }).catchError((Object error) {
                         print(error);
                       });
-
                     }
                   },
                 ),

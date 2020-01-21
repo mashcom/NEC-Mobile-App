@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'inspection.dart';
-import 'dart:convert';
+import 'view_inspection.dart';
 
 class CapturedFormsPage extends StatefulWidget {
   CapturedFormsPage({Key key, this.title}) : super(key: key);
@@ -31,6 +31,13 @@ class _CapturedFormsPageState extends State<CapturedFormsPage> {
     //print(saved_forms);
   }
 
+  openViewInspection() {
+    print("df");
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ViewIspectionRoute()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,37 +72,39 @@ class _CapturedFormsPageState extends State<CapturedFormsPage> {
               ],
             ));
           return ListView(
+            padding: EdgeInsets.only(top: 20),
             children: snapshot.data
-                .map((inspection) => ListTile(
-                      title: Text(
-                        inspection.company_name.toString().toUpperCase(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                .map((inspection) => GestureDetector(
+                      // onTap: openViewInspection(),
+                      child: ListTile(
+                        title: Text(
+                          inspection.company_name.toString().toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        subtitle: Text(
+                          inspection.date.toString().toUpperCase(),
+                          maxLines: 1,
+                        ),
+                        onTap: () => {},
+                        trailing: inspection.done
+                            ? Icon(
+                                Icons.done_all,
+                                color: Colors.green,
+                              )
+                            : Icon(
+                                Icons.sync_problem,
+                                color: Colors.red,
+                              ),
                       ),
-                      subtitle: Text(
-                        inspection.content,
-                        maxLines: 1,
-                      ),
-                      onTap: () => {},
-                      trailing: inspection.done
-                          ? Icon(
-                              Icons.done_all,
-                              color: Colors.green,
-                            )
-                          : Icon(
-                              Icons.sync_problem,
-                              color: Colors.red,
-                            ),
                     ))
                 .toList(),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => {
-          insp.getUnprossedInspections()
-        },
+        onPressed: () => {insp.getUnprossedInspections()},
         tooltip: 'Sync',
         child: Icon(Icons.cloud_upload),
       ), // This trailing comma makes auto-formatting nicer for build methods.

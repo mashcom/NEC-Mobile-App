@@ -2,26 +2,31 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'dart:async';
 import 'package:path/path.dart';
-import 'package:convert/convert.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 final String tableInspection = 'inspection';
+final String tableUserAuth = 'user_auth';
 final String columnId = '_id';
+final String columnDate = 'date_collected';
 final String columnContent = 'title';
 final String columnCompanyName = 'company_name';
 final String columnDone = 'done';
-final String databaseName = 'nec_inspection_zw.db';
+final String databaseName = 'nec_inspection_bonded.db';
+
+final String username = "test@test.com";
+final String password = "password";
 
 class Inspection {
   int id;
   String company_name;
-  String content;
+  String date;
+  var content;
   bool done;
 
   Map<String, dynamic> toMap() {
     var map = <String, dynamic>{
       columnContent: content,
+      columnDate: date,
       columnCompanyName: company_name,
       columnDone: done == true ? 1 : 0
     };
@@ -36,6 +41,7 @@ class Inspection {
   Inspection.fromMap(Map<String, dynamic> map) {
     id = map[columnId];
     content = map[columnContent];
+    date = map[columnDate];
     company_name = map[columnCompanyName];
     done = map[columnDone] == 1;
   }
@@ -53,25 +59,29 @@ class InspectionProvider {
   Future<String> getDatabasePath(String databaseName) async {
     var databasesPath = await getDatabasesPath();
     String path = join(databasesPath, databaseName);
-/*
-    if(await Directory(dirname(path)).exists()){
-      //await deleteDatabase(path);
-    }else{
-      await Directory(dirname(path)).create(recursive:true);
-    }*/
+
     return path;
   }
 
   Future open() async {
     final path = await getDatabasePath(databaseName);
-    db = await openDatabase(path, version: 2,
+    db = await openDatabase(path, version: 3,
         onCreate: (Database db, int version) async {
       await db.execute('''
 create table $tableInspection ( 
   $columnId integer primary key autoincrement, 
+   $columnDate text not null,
   $columnCompanyName text not null,
   $columnContent text not null,
   $columnDone integer not null)
+''');
+
+      await db.execute('''
+create table $tableUserAuth ( 
+  $columnId integer primary key autoincrement, 
+  username text not null,
+  access_token text not null
+  )
 ''');
     });
     print(db);
@@ -84,13 +94,13 @@ create table $tableInspection (
   }
 
   Future<Inspection> simpleInsert(
-      String inspection_data, String companyName) async {
+      String inspection_data, String companyName, String date) async {
     var dbClient = await db_con;
 
     print("COMPANY NAME IS $companyName");
     int id1 = await dbClient.rawInsert(
-        'INSERT INTO $tableInspection($columnCompanyName,$columnContent,$columnDone) VALUES(?,?,?)',
-        [companyName, inspection_data, 0]);
+        'INSERT INTO $tableInspection($columnDate,$columnCompanyName,$columnContent,$columnDone) VALUES(?,?,?,?)',
+        [date, companyName, inspection_data, 0]);
     print('inserted1: $id1');
   }
 
@@ -118,37 +128,119 @@ create table $tableInspection (
     return null;
   }
 
-  Future<Inspection> getUnprossedInspections() async {
+  Future<bool> login(String usernameInput, String passwordInput) async {
+    Map<String, String> headers = {"Content-type": "application/json"};
+    Map<String, String> fields = {
+      'grant_type': 'password',
+      'client_id': '2',
+      'client_secret': 'efO6UmSteMMZ0qPU3Hqn4whRf4BauFbp0Ndgxi0s',
+      'username': usernameInput,
+      'password': passwordInput,
+    };
+
+    var url = 'http://192.168.56.1/nec_web/public/oauth/token';
+    final response =
+        await http.post(url, headers: headers, body: json.encode(fields));
+
+    print("token");
+    Map<String, dynamic> auth_response = jsonDecode(response.body);
+    String access_token = auth_response["access_token"];
+    if (access_token != null) {
+      print("Success");
+      saveAccessToken(username, access_token);
+      return Future.value(true);
+    } else {
+     return Future.value(false);
+    }
+  }
+
+  Future<String> getSession() async {
+    print("Session MGT");
+    var dbClient = await db_con;
+    var result =
+        await dbClient.rawQuery('SELECT * count FROM $tableUserAuth LIMIT 1');
+    //get token
+    print("Getting SESSION");
+    var access_token = "";
+    // return null;
+    result.forEach((v) => {
+          //print(json.decode(v['content']))
+          access_token = v['access_token']
+        });
+    return access_token;
+  }
+
+  saveAccessToken(String username, String access_token) async {
+    var dbClient = await db_con;
+
+    await dbClient.rawDelete('DELETE FROM $tableUserAuth');
+
+    int id1 = await dbClient.rawInsert(
+        'INSERT INTO $tableUserAuth(username,access_token) VALUES(?,?)',
+        [username, access_token]);
+    print('inserted1: $id1');
+  }
+
+  getUnprossedInspections() async {
     print("Processing Forms");
     var dbClient = await db_con;
     var result = await dbClient
         .rawQuery('SELECT * FROM $tableInspection WHERE $columnDone=0');
-    //print(result);
 
+    //get token
+    print("Getting token");
+
+    print("starting syncing");
+    // return null;
     result.forEach((v) => {
           //print(json.decode(v['content']))
-          syncToCloud(v["_id"],v[columnContent])
+          syncToCloud(v["_id"], v[columnContent], "")
         });
-    
+    /*CapturedFormsPage h = CapturedFormsPage();
+    h.createState().saved_forms = getAllInspection();*/
   }
 
-  syncToCloud(id,content) async {
+  syncToCloud(id, content, api_token) async {
     print("Syncing to cloud");
-    Map <String,dynamic> c = {"content":content};
-    try {
+
+    Map<String, dynamic> c = {"content": content};
+    //try {
+    Map<String, String> headers = {
+      "Content-type": "application/json",
+      "Authorization": "Bearer $api_token"
+    };
+
+    Map<String, String> fields = {
+      'form_content': content.toString(),
+    };
+    var url = 'http://192.168.56.1/nec_web/public/api/inspection';
+    final response =
+        await http.post(url, headers: headers, body: json.encode(fields));
+
+    Map<String, dynamic> auth_response = jsonDecode(response.body);
+    var status = auth_response["status"];
+    //print(access_token);
+    //print(response.body);
+    if (status == true) {
+      markAsDone(id);
+    }
+
+    /*} catch (error) {
+                            print(error);
+                          }*/
+    /*try {
       Firestore.instance
           .collection('inspections')
           .add(c)
           .then((DocumentReference ds) {
         print("Processed");
-        markAsDone(id);
+        //markAsDone(id);
       }).catchError((Object error) {
         print(error);
       });
-    }
-    catch(error){
+    } catch (error) {
       print(error);
-    }
+    }*/
   }
 
   Future<int> markAsDone(id) async {

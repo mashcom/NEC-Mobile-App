@@ -21,6 +21,8 @@ dependencies:
   cloud_firestore:
   sqflite: ^1.2.0
   path:
+  http:
+  connectivity: ^0.4.6+2
   flutter:
     sdk: flutter
 
@@ -61,18 +63,15 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: WorkSans
+    - family: AirbnbCereal
       fonts:
-        - asset: assets/fonts/WorkSans-Regular.ttf
-        - asset: assets/fonts/WorkSans-Medium.ttf
+        - asset: assets/fonts/AirbnbCerealBook.ttf
+        - asset: assets/fonts/AirbnbCerealMedium.ttf
           weight: 500
-        - asset: assets/fonts/WorkSans-SemiBold.ttf
+        - asset: assets/fonts/AirbnbCerealBold.ttf
           weight: 600
-        - asset: assets/fonts/WorkSans-Bold.ttf
+        - asset: assets/fonts/AirbnbCerealBold.ttf
           weight: 700
-
-
-
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
