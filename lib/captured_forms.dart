@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -19,6 +21,7 @@ class _CapturedFormsPageState extends State<CapturedFormsPage> {
   final DocumentReference postRef = Firestore.instance.document('inspections');
   var saved_forms;
   var unprocessed_forms;
+  bool is_syncing = false;
   InspectionProvider insp;
 
   @override
@@ -28,7 +31,7 @@ class _CapturedFormsPageState extends State<CapturedFormsPage> {
     insp.open();
     saved_forms = insp.getAllInspection();
 
-    //print(saved_forms);
+    print(saved_forms);
   }
 
   openViewInspection() {
@@ -71,40 +74,78 @@ class _CapturedFormsPageState extends State<CapturedFormsPage> {
                 ),
               ],
             ));
-          return ListView(
-            padding: EdgeInsets.only(top: 20),
-            children: snapshot.data
-                .map((inspection) => GestureDetector(
-                      // onTap: openViewInspection(),
-                      child: ListTile(
-                        title: Text(
-                          inspection.company_name.toString().toUpperCase(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          inspection.date.toString().toUpperCase(),
-                          maxLines: 1,
-                        ),
-                        onTap: () => {},
-                        trailing: inspection.done
-                            ? Icon(
-                                Icons.done_all,
-                                color: Colors.green,
-                              )
-                            : Icon(
-                                Icons.sync_problem,
-                                color: Colors.red,
-                              ),
+          return is_syncing
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      CircularProgressIndicator(
+                        backgroundColor: Colors.white,
+                        strokeWidth: 2,
                       ),
-                    ))
-                .toList(),
-          );
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Text(
+                        "Syncing please wait",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView(
+                  padding: EdgeInsets.only(top: 20),
+                  children: snapshot.data
+                      .map((inspection) => GestureDetector(
+                            // onTap: openViewInspection(),
+                            child: ListTile(
+                              title: Text(
+                                inspection.company_name
+                                    .toString()
+                                    .toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                inspection.date.toString().toUpperCase(),
+                                maxLines: 1,
+                              ),
+                              onTap: () => {},
+                              trailing: inspection.done
+                                  ? Icon(
+                                      Icons.done_all,
+                                      color: Colors.lightBlue,
+                                    )
+                                  : Icon(
+                                      Icons.sync_problem,
+                                      color: Colors.red,
+                                    ),
+                            ),
+                          ))
+                      .toList(),
+                );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => {insp.getUnprossedInspections()},
+        onPressed: () {
+          if (is_syncing == false) {
+            setState(() {
+              is_syncing = true;
+            });
+            var duration = Duration(seconds: 2);
+            Timer(duration, () {
+              insp.getUnprossedInspections().then((response) {
+                // insp.getAllInspection().then((inspections) {
+                setState(() {
+                  is_syncing = false;
+                });
+                // saved_forms = inspections;
+                // });
+              });
+            });
+          }
+        },
         tooltip: 'Sync',
         child: Icon(Icons.cloud_upload),
       ), // This trailing comma makes auto-formatting nicer for build methods.

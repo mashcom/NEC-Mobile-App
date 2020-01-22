@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:nec_inspection_app/main.dart';
+import 'package:nec_inspection_app/tabs.dart';
 import 'app_theme.dart';
 import 'inspection.dart';
 
@@ -37,111 +38,131 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   bool is_authenticating = false;
+  bool authenticating_failed = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(),
-        child: Center(
-          child: SizedBox(
-            width: 400,
-            child: Padding(
-              padding: EdgeInsets.only(top: 200),
-              child: FormBuilder(
-                key: _fbKey,
-                initialValue: {
-                  'date_collected': DateTime.now(),
-                },
-                autovalidate: true,
-                child: Column(
-                  children: <Widget>[
-                    FlutterLogo(
-                      size: 100,
-                    ),
-                    Text(
-                      "NEC Inspection App",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                    ),
-                    Divider(
-                      height: 50,
-                    ),
-                    FormBuilderTextField(
-                      attribute: "email",
-                      decoration: InputDecoration(labelText: "Email"),
-                      autofocus: true,
-                      validators: [
-                        FormBuilderValidators.required(),
-                        FormBuilderValidators.email(),
-                      ],
-                    ),
-                    FormBuilderTextField(
-                      attribute: "password",
-                      decoration: InputDecoration(labelText: "Password"),
-                      validators: [
-                        FormBuilderValidators.required(),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 50,
-                    ),
-                    is_authenticating
-                        ? CircularProgressIndicator(
-                            backgroundColor: Colors.white,
-                            strokeWidth: 2,
-                          )
-                        : RaisedButton(
-                            child: Row(
-                              children: <Widget>[
-                                Text(
-                                  "Sign In",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                            color: Colors.indigo,
-                            onPressed: () async {
-                              if (_fbKey.currentState.saveAndValidate()) {
-                                InspectionProvider insp = InspectionProvider();
-                                insp.open();
+      body: Builder(builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(),
+          child: Center(
+            child: SizedBox(
+              width: 400,
+              child: Padding(
+                padding: EdgeInsets.only(top: 200),
+                child: FormBuilder(
+                  key: _fbKey,
+                  autovalidate: false,
+                  child: Column(
+                    children: <Widget>[
+                      FlutterLogo(
+                        size: 100,
+                      ),
+                      Text(
+                        "NEC Inspection App",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 20),
+                      ),
+                      Divider(
+                        height: 50,
+                      ),
+                      FormBuilderTextField(
+                        attribute: "email",
+                        decoration: InputDecoration(labelText: "Email"),
+                        autofocus: true,
+                        validators: [
+                          FormBuilderValidators.required(),
+                          FormBuilderValidators.email(),
+                        ],
+                      ),
+                      FormBuilderTextField(
+                        attribute: "password",
+                        decoration: InputDecoration(labelText: "Password"),
+                        validators: [
+                          FormBuilderValidators.required(),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 50,
+                      ),
+                      is_authenticating
+                          ? CircularProgressIndicator(
+                              backgroundColor: Colors.white,
+                              strokeWidth: 2,
+                            )
+                          : RaisedButton(
+                              child: Row(
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.all(15.0),
+                                    child: Center(
+                                      child: Text(
+                                        "Sign In",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              color: Colors.indigo,
+                              onPressed: () async {
+                                if (_fbKey.currentState.saveAndValidate()) {
+                                  InspectionProvider insp =
+                                      InspectionProvider();
+                                  insp.open();
 
-                                var email = _fbKey.currentState.value["email"];
-                                var password =
-                                    _fbKey.currentState.value["password"];
+                                  var email =
+                                      _fbKey.currentState.value["email"];
+                                  var password =
+                                      _fbKey.currentState.value["password"];
 
-                                setState(() {
-                                  is_authenticating = true;
-                                });
-
-                                // Future<bool> is_valid_credentials = insp.login(email, password);
-                                insp.login(email, password).then((resp) {
                                   setState(() {
-                                    is_authenticating = false;
+                                    is_authenticating = true;
                                   });
 
-                                  if (resp == true) {
-                                    Navigator.push(
-                                        context,
-                                        CupertinoPageRoute(
-                                            builder: (BuildContext context) =>
-                                                MyHomePage()));
-                                  } else {
-                                    print("login failed");
-                                  }
-                                });
-                              }
+                                  // Future<bool> is_valid_credentials = insp.login(email, password);
+                                  insp.login(email, password).then((resp) {
+                                    setState(() {
+                                      is_authenticating = false;
+                                    });
 
-                              //insp.getSession();
-                            },
-                          ),
-                  ],
+                                    if (resp == true) {
+                                      print("login success");
+                                      Navigator.pushReplacement(
+                                          context,
+                                          CupertinoPageRoute(
+                                              builder: (BuildContext context) =>
+                                                  TabsPage()));
+                                    } else {
+                                      Scaffold.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor:
+                                              Color.fromRGBO(176, 0, 32, 1),
+                                          content: Text(
+                                            'Login failed, please try again!',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      );
+
+                                      print("login failed");
+                                    }
+                                  });
+                                }
+
+                                //insp.getSession();
+                              },
+                            ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

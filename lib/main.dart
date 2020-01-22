@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:nec_inspection_app/login.dart';
+import 'package:nec_inspection_app/splash_screen.dart';
 import 'package:nec_inspection_app/table_form_check_collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -22,61 +23,7 @@ class MyApp extends StatelessWidget {
           textTheme: AppTheme.textTheme,
           platform: TargetPlatform.iOS),
       // home: MyHomePage(title: 'NEC Inspection App'),
-      home: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          appBar: AppBar(
-            bottom: TabBar(
-              tabs: [
-                Tab(
-                  icon: Icon(Icons.camera),
-                  text: "Capture",
-                ),
-                Tab(
-                  icon: Icon(Icons.book),
-                  text: "Saved Inspections",
-                ),
-                Tab(
-                  icon: Icon(Icons.settings_applications),
-                  text: "Settings",
-                ),
-              ],
-            ),
-            title: Text('NEC Inspection App'),
-            elevation: 10,
-          ),
-          body: TabBarView(
-            children: [
-              MyHomePage(title: 'Capture Inspection'),
-              CapturedFormsPage(
-                title: "Captured Forms",
-              ),
-              ListView(
-                children: <Widget>[
-                  ListTile(
-                    title: Text("Auto Validate Input"),
-                    subtitle: Text("Validate input while user is typing input"),
-                    trailing: Form(
-                      child: Checkbox(
-                        value: false,
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    title: Text("Auto Validate Input"),
-                    subtitle: Text("Validate input while user is typing input"),
-                    trailing: Form(
-                      child: Checkbox(
-                        value: false,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      home: SplashScreen(),
     );
   }
 }
@@ -116,9 +63,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
       body: Padding(
         padding: EdgeInsets.all(25),
         child: ListView(

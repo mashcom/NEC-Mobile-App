@@ -150,7 +150,7 @@ create table $tableUserAuth (
       saveAccessToken(username, access_token);
       return Future.value(true);
     } else {
-     return Future.value(false);
+      return Future.value(false);
     }
   }
 
@@ -158,7 +158,7 @@ create table $tableUserAuth (
     print("Session MGT");
     var dbClient = await db_con;
     var result =
-        await dbClient.rawQuery('SELECT * count FROM $tableUserAuth LIMIT 1');
+        await dbClient.rawQuery('SELECT * FROM $tableUserAuth LIMIT 1');
     //get token
     print("Getting SESSION");
     var access_token = "";
@@ -167,6 +167,8 @@ create table $tableUserAuth (
           //print(json.decode(v['content']))
           access_token = v['access_token']
         });
+    print("session retrived");
+    print(access_token);
     return access_token;
   }
 
@@ -181,7 +183,12 @@ create table $tableUserAuth (
     print('inserted1: $id1');
   }
 
-  getUnprossedInspections() async {
+  logout() async {
+    var dbClient = await db_con;
+    await dbClient.rawDelete('DELETE FROM $tableUserAuth');
+  }
+
+  Future<bool> getUnprossedInspections() async {
     print("Processing Forms");
     var dbClient = await db_con;
     var result = await dbClient
@@ -191,13 +198,12 @@ create table $tableUserAuth (
     print("Getting token");
 
     print("starting syncing");
-    // return null;
-    result.forEach((v) => {
-          //print(json.decode(v['content']))
-          syncToCloud(v["_id"], v[columnContent], "")
-        });
-    /*CapturedFormsPage h = CapturedFormsPage();
-    h.createState().saved_forms = getAllInspection();*/
+    String access_token = "";
+    getSession().then((response) {
+      access_token = response;
+      result.forEach(
+          (v) => {syncToCloud(v["_id"], v[columnContent], access_token)});
+    });
   }
 
   syncToCloud(id, content, api_token) async {
@@ -213,34 +219,20 @@ create table $tableUserAuth (
     Map<String, String> fields = {
       'form_content': content.toString(),
     };
+    print(api_token);
     var url = 'http://192.168.56.1/nec_web/public/api/inspection';
-    final response =
-        await http.post(url, headers: headers, body: json.encode(fields));
 
-    Map<String, dynamic> auth_response = jsonDecode(response.body);
-    var status = auth_response["status"];
-    //print(access_token);
-    //print(response.body);
-    if (status == true) {
-      markAsDone(id);
-    }
+    await http
+        .post(url, headers: headers, body: json.encode(fields))
+        .then((response) {
+      Map<String, dynamic> auth_response = jsonDecode(response.body);
+      var status = auth_response["status"];
 
-    /*} catch (error) {
-                            print(error);
-                          }*/
-    /*try {
-      Firestore.instance
-          .collection('inspections')
-          .add(c)
-          .then((DocumentReference ds) {
-        print("Processed");
-        //markAsDone(id);
-      }).catchError((Object error) {
-        print(error);
-      });
-    } catch (error) {
-      print(error);
-    }*/
+      //print(response.body);
+      if (status == true) {
+        markAsDone(id);
+      }
+    });
   }
 
   Future<int> markAsDone(id) async {
